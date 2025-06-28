@@ -103,8 +103,9 @@ class UserProvider extends ChangeNotifier {
     Map<String, dynamic> data,
   ) async {
     if (_currentUser == null ||
-        _currentUser!.role != 'client')
+        _currentUser!.role != 'client') {
       return false;
+    }
 
     try {
       await UserService.updateClientData(
@@ -146,8 +147,9 @@ class UserProvider extends ChangeNotifier {
   Future<Map<String, dynamic>?>
   getMyTrainer() async {
     if (_clientData == null ||
-        _clientData!['trainerId'] == null)
+        _clientData!['trainerId'] == null) {
       return null;
+    }
 
     try {
       String trainerId =
@@ -177,8 +179,9 @@ class UserProvider extends ChangeNotifier {
   // Get client's fitness goals
   List<String> get fitnessGoals {
     if (_clientData == null ||
-        _clientData!['goals'] == null)
+        _clientData!['goals'] == null) {
       return [];
+    }
     return List<String>.from(
       _clientData!['goals'],
     );

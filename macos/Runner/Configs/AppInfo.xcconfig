@@ -8,7 +8,7 @@
 PRODUCT_NAME = toofit
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = toofit.com.toofit
+PRODUCT_BUNDLE_IDENTIFIER = com.toofit
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2025 toofit.com. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2025 com.toofit. All rights reserved.
