@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,7 +18,6 @@ class _LoginScreenState
   final _passwordController =
       TextEditingController();
   bool _isPasswordVisible = false;
-  bool _isLoading = false;
 
   // קל לשינוי - תמונות ולוגו
   static const String backgroundImage =
@@ -82,6 +83,9 @@ class _LoginScreenState
                   _buildSubtitle(),
 
                   const SizedBox(height: 40),
+
+                  // הצגת שגיאות
+                  _buildErrorMessage(),
 
                   // טופס התחברות
                   _buildLoginForm(),
@@ -173,6 +177,67 @@ class _LoginScreenState
         height: 1.4,
       ),
       textAlign: TextAlign.center,
+    );
+  }
+
+  Widget _buildErrorMessage() {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, _) {
+        if (authProvider.errorMessage ==
+            null) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(
+            bottom: 16,
+          ),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(
+              0.1,
+            ),
+            borderRadius:
+                BorderRadius.circular(8),
+            border: Border.all(
+              color: Colors.red.withOpacity(
+                0.3,
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: Colors.red,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  authProvider.errorMessage!,
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: () => authProvider
+                    .clearError(),
+                icon: const Icon(
+                  Icons.close,
+                  color: Colors.red,
+                  size: 18,
+                ),
+                padding: EdgeInsets.zero,
+                constraints:
+                    const BoxConstraints(),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -277,60 +342,55 @@ class _LoginScreenState
   }
 
   Widget _buildLoginButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 55,
-      child: ElevatedButton(
-        onPressed: _isLoading
-            ? null
-            : _handleLogin,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryNeon,
-          foregroundColor: primaryPurple,
-          shape: RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(15),
-          ),
-          elevation: 3,
-        ),
-        child: _isLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor:
-                      AlwaysStoppedAnimation<
-                        Color
-                      >(primaryPurple),
-                ),
-              )
-            : const Text(
-                'התחברות',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight:
-                      FontWeight.bold,
-                ),
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, _) {
+        return SizedBox(
+          width: double.infinity,
+          height: 55,
+          child: ElevatedButton(
+            onPressed: authProvider.isLoading
+                ? null
+                : _handleLogin,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryNeon,
+              foregroundColor: primaryPurple,
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(
+                      15,
+                    ),
               ),
-      ),
+              elevation: 3,
+            ),
+            child: authProvider.isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation<
+                            Color
+                          >(primaryPurple),
+                    ),
+                  )
+                : const Text(
+                    'התחברות',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight:
+                          FontWeight.bold,
+                    ),
+                  ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildForgotPassword() {
     return TextButton(
-      onPressed: () {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'אפשרות זו תהיה זמינה בקרוב',
-            ),
-            backgroundColor: Colors.blue,
-          ),
-        );
-      },
+      onPressed: _handleForgotPassword,
       child: const Text(
         'שכחת את הסיסמה?',
         style: TextStyle(
@@ -354,19 +414,7 @@ class _LoginScreenState
           ),
         ),
         GestureDetector(
-          onTap: () {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'מסך הרשמה יבנה בהמשך',
-                ),
-                backgroundColor:
-                    Colors.green,
-              ),
-            );
-          },
+          onTap: _handleSignUpNavigation,
           child: const Text(
             'הירשמי כאן',
             style: TextStyle(
@@ -385,28 +433,76 @@ class _LoginScreenState
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    final authProvider =
+        Provider.of<AuthProvider>(
+          context,
+          listen: false,
+        );
 
-    // סימולציה של טעינה
-    await Future.delayed(
-      const Duration(seconds: 1),
-    );
+    bool success = await authProvider
+        .signInWithEmailAndPassword(
+          _emailController.text.trim(),
+          _passwordController.text.trim(),
+        );
 
-    setState(() {
-      _isLoading = false;
-    });
+    if (success) {
+      // Navigation will be handled automatically by AuthWrapper
+      // Clear form
+      _emailController.clear();
+      _passwordController.clear();
+    }
+  }
 
-    // הודעה זמנית
+  void _handleForgotPassword() async {
+    if (_emailController.text
+        .trim()
+        .isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'נא להזין כתובת אימייל תחילה',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final authProvider =
+        Provider.of<AuthProvider>(
+          context,
+          listen: false,
+        );
+    bool success = await authProvider
+        .resetPassword(
+          _emailController.text.trim(),
+        );
+
+    if (success) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'נשלח אימייל לאיפוס סיסמה',
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  void _handleSignUpNavigation() {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(
       const SnackBar(
         content: Text(
-          'כפתור עדיין לא פעיל - בפיתוח',
+          'מסך הרשמה יבנה בהמשך',
         ),
-        backgroundColor: Colors.orange,
+        backgroundColor: Colors.blue,
       ),
     );
   }
