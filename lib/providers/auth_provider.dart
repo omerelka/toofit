@@ -16,18 +16,48 @@ class AuthProvider extends ChangeNotifier {
       FirebaseService.currentUser;
 
   AuthProvider() {
+    print(
+      '🔧 AuthProvider constructor called',
+    );
     _checkAuthState();
   }
 
   // Check initial authentication state
   void _checkAuthState() {
-    FirebaseService.auth
-        .authStateChanges()
-        .listen((User? user) {
+    print('🔍 Checking auth state...');
+
+    try {
+      FirebaseService.auth.authStateChanges().listen(
+        (User? user) {
+          print(
+            '🔥 Auth state changed: user = ${user?.uid ?? 'null'}',
+          );
+
           _isAuthenticated = user != null;
           _isLoading = false;
+
+          print(
+            '✅ Auth state updated: isAuthenticated=$_isAuthenticated, isLoading=$_isLoading',
+          );
           notifyListeners();
-        });
+        },
+        onError: (error) {
+          print(
+            '❌ Auth state error: $error',
+          );
+          _isLoading = false;
+          _errorMessage = error.toString();
+          notifyListeners();
+        },
+      );
+    } catch (e) {
+      print(
+        '❌ Error setting up auth listener: $e',
+      );
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+    }
   }
 
   // Sign in with email and password
@@ -36,6 +66,10 @@ class AuthProvider extends ChangeNotifier {
     String password,
   ) async {
     try {
+      print(
+        '🔑 Attempting sign in for: $email',
+      );
+
       _isLoading = true;
       _errorMessage = null;
       notifyListeners();
@@ -47,16 +81,21 @@ class AuthProvider extends ChangeNotifier {
           );
 
       if (result != null) {
+        print(
+          '✅ Sign in successful for: ${result.user?.email}',
+        );
         _isAuthenticated = true;
         _isLoading = false;
         notifyListeners();
         return true;
       }
 
+      print('❌ Sign in failed: no result');
       _isLoading = false;
       notifyListeners();
       return false;
     } catch (e) {
+      print('❌ Sign in error: $e');
       _errorMessage = e.toString();
       _isLoading = false;
       notifyListeners();
@@ -74,6 +113,10 @@ class AuthProvider extends ChangeNotifier {
     String role,
   ) async {
     try {
+      print(
+        '📝 Attempting sign up for: $email, role: $role',
+      );
+
       _isLoading = true;
       _errorMessage = null;
       notifyListeners();
@@ -88,16 +131,21 @@ class AuthProvider extends ChangeNotifier {
           );
 
       if (result != null) {
+        print(
+          '✅ Sign up successful for: ${result.user?.email}',
+        );
         _isAuthenticated = true;
         _isLoading = false;
         notifyListeners();
         return true;
       }
 
+      print('❌ Sign up failed: no result');
       _isLoading = false;
       notifyListeners();
       return false;
     } catch (e) {
+      print('❌ Sign up error: $e');
       _errorMessage = e.toString();
       _isLoading = false;
       notifyListeners();
@@ -108,10 +156,13 @@ class AuthProvider extends ChangeNotifier {
   // Sign out
   Future<void> signOut() async {
     try {
+      print('🚪 Signing out...');
       await AuthService.signOut();
       _isAuthenticated = false;
+      print('✅ Sign out successful');
       notifyListeners();
     } catch (e) {
+      print('❌ Sign out error: $e');
       _errorMessage = e.toString();
       notifyListeners();
     }
@@ -122,10 +173,15 @@ class AuthProvider extends ChangeNotifier {
     String email,
   ) async {
     try {
+      print(
+        '🔄 Resetting password for: $email',
+      );
       _errorMessage = null;
       await AuthService.resetPassword(email);
+      print('✅ Password reset email sent');
       return true;
     } catch (e) {
+      print('❌ Password reset error: $e');
       _errorMessage = e.toString();
       notifyListeners();
       return false;
@@ -134,6 +190,7 @@ class AuthProvider extends ChangeNotifier {
 
   // Clear error message
   void clearError() {
+    print('🧹 Clearing error message');
     _errorMessage = null;
     notifyListeners();
   }

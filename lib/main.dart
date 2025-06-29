@@ -10,10 +10,21 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions
-        .currentPlatform,
-  );
+  print('🚀 Starting app initialization...');
+
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions
+          .currentPlatform,
+    );
+    print(
+      '✅ Firebase initialized successfully',
+    );
+  } catch (e) {
+    print(
+      '❌ Firebase initialization failed: $e',
+    );
+  }
 
   runApp(const MyApp());
 }
@@ -23,13 +34,25 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('🎯 Building MyApp...');
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (_) => AuthProvider(),
+          create: (_) {
+            print(
+              '🔧 Creating AuthProvider...',
+            );
+            return AuthProvider();
+          },
         ),
         ChangeNotifierProvider(
-          create: (_) => UserProvider(),
+          create: (_) {
+            print(
+              '🔧 Creating UserProvider...',
+            );
+            return UserProvider();
+          },
         ),
       ],
       child: MaterialApp(
@@ -70,21 +93,43 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('🔍 Building AuthWrapper...');
+
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
+        print(
+          '🔍 AuthWrapper state: isLoading=${authProvider.isLoading}, isAuthenticated=${authProvider.isAuthenticated}',
+        );
+
         // Show loading while checking auth state
         if (authProvider.isLoading) {
+          print(
+            '⏳ Showing loading screen...',
+          );
           return const Scaffold(
             body: Center(
-              child: CircularProgressIndicator(
-                valueColor:
-                    AlwaysStoppedAnimation<
-                      Color
-                    >(
-                      Color(
-                        0xFF714bf2,
-                      ), // TooFit purple
+              child: Column(
+                mainAxisAlignment:
+                    MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<
+                          Color
+                        >(
+                          Color(
+                            0xFF714bf2,
+                          ), // TooFit purple
+                        ),
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'טוען...',
+                    style: TextStyle(
+                      fontSize: 16,
                     ),
+                  ),
+                ],
               ),
             ),
           );
@@ -92,10 +137,16 @@ class AuthWrapper extends StatelessWidget {
 
         // Show login if not authenticated
         if (!authProvider.isAuthenticated) {
+          print(
+            '🔑 User not authenticated, showing login screen',
+          );
           return const LoginScreen();
         }
 
         // Show appropriate dashboard based on user role
+        print(
+          '✅ User authenticated, navigating to role-based navigation',
+        );
         return const RoleBasedNavigation();
       },
     );
@@ -109,19 +160,41 @@ class RoleBasedNavigation
 
   @override
   Widget build(BuildContext context) {
+    print(
+      '🎯 Building RoleBasedNavigation...',
+    );
+
     return Consumer<UserProvider>(
       builder: (context, userProvider, _) {
+        print(
+          '🔍 UserProvider state: isLoading=${userProvider.isLoading}, user=${userProvider.currentUser?.firstName ?? 'null'}',
+        );
+
         // Show loading while fetching user data
         if (userProvider.isLoading ||
             userProvider.currentUser ==
                 null) {
+          print('⏳ Loading user data...');
           return const Scaffold(
             body: Center(
-              child: CircularProgressIndicator(
-                valueColor:
-                    AlwaysStoppedAnimation<
-                      Color
-                    >(Color(0xFF714bf2)),
+              child: Column(
+                mainAxisAlignment:
+                    MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<
+                          Color
+                        >(Color(0xFF714bf2)),
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'טוען נתוני משתמש...',
+                    style: TextStyle(
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
               ),
             ),
           );
@@ -129,16 +202,25 @@ class RoleBasedNavigation
 
         final user =
             userProvider.currentUser!;
+        print(
+          '👤 User loaded: ${user.firstName} ${user.lastName}, role: ${user.role}',
+        );
 
         // Navigate based on role
         if (user.role == 'client') {
-          // Import and use your ClientLandingPage here
+          print(
+            '🏃‍♀️ Navigating to client dashboard',
+          );
           return const ClientDashboardPlaceholder();
         } else if (user.role == 'trainer') {
-          // Import and use your TrainerDashboard here
+          print(
+            '💪 Navigating to trainer dashboard',
+          );
           return const TrainerDashboardPlaceholder();
         } else {
-          // Unknown role - back to login
+          print(
+            '❌ Unknown role: ${user.role}, returning to login',
+          );
           return const LoginScreen();
         }
       },
@@ -155,6 +237,7 @@ class ClientDashboardPlaceholder
 
   @override
   Widget build(BuildContext context) {
+    print('🏠 Building Client Dashboard');
     final userProvider =
         Provider.of<UserProvider>(context);
     final user = userProvider.currentUser!;
@@ -164,9 +247,16 @@ class ClientDashboardPlaceholder
         title: Text(
           'ברוכה הבאה ${user.firstName}!',
         ),
+        backgroundColor: const Color(
+          0xFF714bf2,
+        ),
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             onPressed: () async {
+              print(
+                '🚪 User logging out...',
+              );
               await Provider.of<
                     AuthProvider
                   >(context, listen: false)
@@ -177,10 +267,32 @@ class ClientDashboardPlaceholder
         ],
       ),
       body: const Center(
-        child: Text(
-          'Client Dashboard\n(בקרוב...)',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 24),
+        child: Column(
+          mainAxisAlignment:
+              MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.fitness_center,
+              size: 80,
+              color: Color(0xFF714bf2),
+            ),
+            SizedBox(height: 20),
+            Text(
+              'Client Dashboard',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 10),
+            Text(
+              '(בקרוב...)',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -195,6 +307,7 @@ class TrainerDashboardPlaceholder
 
   @override
   Widget build(BuildContext context) {
+    print('🏠 Building Trainer Dashboard');
     final userProvider =
         Provider.of<UserProvider>(context);
     final user = userProvider.currentUser!;
@@ -204,9 +317,16 @@ class TrainerDashboardPlaceholder
         title: Text(
           'ברוך הבא ${user.firstName}!',
         ),
+        backgroundColor: const Color(
+          0xFF714bf2,
+        ),
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             onPressed: () async {
+              print(
+                '🚪 User logging out...',
+              );
               await Provider.of<
                     AuthProvider
                   >(context, listen: false)
@@ -217,10 +337,32 @@ class TrainerDashboardPlaceholder
         ],
       ),
       body: const Center(
-        child: Text(
-          'Trainer Dashboard\n(בקרוב...)',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 24),
+        child: Column(
+          mainAxisAlignment:
+              MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.people,
+              size: 80,
+              color: Color(0xFF714bf2),
+            ),
+            SizedBox(height: 20),
+            Text(
+              'Trainer Dashboard',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 10),
+            Text(
+              '(בקרוב...)',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+            ),
+          ],
         ),
       ),
     );

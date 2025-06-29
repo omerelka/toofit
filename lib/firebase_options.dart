@@ -28,10 +28,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for windows - '
@@ -65,4 +62,14 @@ class DefaultFirebaseOptions {
     storageBucket: 'toofit-production.firebasestorage.app',
     iosBundleId: 'com.toofit',
   );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyA8w1AVu0nxcjhB3O2EeaLf4gJKowKm0Zs',
+    appId: '1:264343991501:ios:64bf0795f98ccb1f41a584',
+    messagingSenderId: '264343991501',
+    projectId: 'toofit-production',
+    storageBucket: 'toofit-production.firebasestorage.app',
+    iosBundleId: 'com.toofit',
+  );
+
 }

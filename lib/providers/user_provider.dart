@@ -20,22 +20,52 @@ class UserProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   UserProvider() {
+    print(
+      '🔧 UserProvider constructor called',
+    );
     _initializeUser();
   }
 
   // Initialize user data when provider is created
   void _initializeUser() {
-    FirebaseService.auth
-        .authStateChanges()
-        .listen((User? firebaseUser) async {
+    print('🔍 Initializing user...');
+
+    try {
+      FirebaseService.auth.authStateChanges().listen(
+        (User? firebaseUser) async {
+          print(
+            '🔥 User auth state changed: ${firebaseUser?.uid ?? 'null'}',
+          );
+
           if (firebaseUser != null) {
+            print(
+              '👤 Loading user data for: ${firebaseUser.uid}',
+            );
             await loadUserData(
               firebaseUser.uid,
             );
           } else {
+            print('🧹 Clearing user data');
             _clearUserData();
           }
-        });
+        },
+        onError: (error) {
+          print(
+            '❌ User auth state error: $error',
+          );
+          _errorMessage = error.toString();
+          _isLoading = false;
+          notifyListeners();
+        },
+      );
+    } catch (e) {
+      print(
+        '❌ Error setting up user listener: $e',
+      );
+      _errorMessage = e.toString();
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   // Load user data from Firestore
@@ -43,33 +73,62 @@ class UserProvider extends ChangeNotifier {
     String uid,
   ) async {
     try {
+      print(
+        '📊 Loading user data for: $uid',
+      );
+
       _isLoading = true;
       _errorMessage = null;
       notifyListeners();
 
       // Get basic user data
+      print('🔍 Fetching user document...');
       UserModel? user =
           await UserService.getUserById(uid);
+
       if (user != null) {
+        print(
+          '✅ User data loaded: ${user.firstName} ${user.lastName}, role: ${user.role}',
+        );
         _currentUser = user;
 
         // Get role-specific data
         if (user.role == 'client') {
+          print(
+            '🏃‍♀️ Loading client data...',
+          );
           _clientData =
               await UserService.getClientData(
                 uid,
               );
+          print(
+            '✅ Client data loaded: ${_clientData != null ? 'success' : 'null'}',
+          );
         } else if (user.role == 'trainer') {
+          print(
+            '💪 Loading trainer data...',
+          );
           _trainerData =
               await UserService.getTrainerData(
                 uid,
               );
+          print(
+            '✅ Trainer data loaded: ${_trainerData != null ? 'success' : 'null'}',
+          );
         }
+      } else {
+        print(
+          '❌ User document not found for: $uid',
+        );
+        _errorMessage =
+            'User data not found';
       }
 
       _isLoading = false;
+      print('🏁 User data loading complete');
       notifyListeners();
     } catch (e) {
+      print('❌ Error loading user data: $e');
       _errorMessage = e.toString();
       _isLoading = false;
       notifyListeners();
@@ -80,9 +139,18 @@ class UserProvider extends ChangeNotifier {
   Future<bool> updateUserProfile(
     Map<String, dynamic> data,
   ) async {
-    if (_currentUser == null) return false;
+    if (_currentUser == null) {
+      print(
+        '❌ Cannot update profile: no current user',
+      );
+      return false;
+    }
 
     try {
+      print(
+        '📝 Updating user profile for: ${_currentUser!.uid}',
+      );
+
       await UserService.updateUserProfile(
         _currentUser!.uid,
         data,
@@ -90,8 +158,10 @@ class UserProvider extends ChangeNotifier {
 
       // Reload user data
       await loadUserData(_currentUser!.uid);
+      print('✅ Profile update successful');
       return true;
     } catch (e) {
+      print('❌ Profile update error: $e');
       _errorMessage = e.toString();
       notifyListeners();
       return false;
@@ -104,10 +174,17 @@ class UserProvider extends ChangeNotifier {
   ) async {
     if (_currentUser == null ||
         _currentUser!.role != 'client') {
+      print(
+        '❌ Cannot update client data: invalid user or role',
+      );
       return false;
     }
 
     try {
+      print(
+        '📝 Updating client data for: ${_currentUser!.uid}',
+      );
+
       await UserService.updateClientData(
         _currentUser!.uid,
         data,
@@ -118,9 +195,15 @@ class UserProvider extends ChangeNotifier {
           await UserService.getClientData(
             _currentUser!.uid,
           );
+      print(
+        '✅ Client data update successful',
+      );
       notifyListeners();
       return true;
     } catch (e) {
+      print(
+        '❌ Client data update error: $e',
+      );
       _errorMessage = e.toString();
       notifyListeners();
       return false;
@@ -129,6 +212,7 @@ class UserProvider extends ChangeNotifier {
 
   // Clear user data on logout
   void _clearUserData() {
+    print('🧹 Clearing all user data');
     _currentUser = null;
     _clientData = null;
     _trainerData = null;
@@ -139,6 +223,7 @@ class UserProvider extends ChangeNotifier {
 
   // Clear error message
   void clearError() {
+    print('🧹 Clearing error message');
     _errorMessage = null;
     notifyListeners();
   }
@@ -148,20 +233,29 @@ class UserProvider extends ChangeNotifier {
   getMyTrainer() async {
     if (_clientData == null ||
         _clientData!['trainerId'] == null) {
+      print(
+        '🔍 No trainer assigned to this client',
+      );
       return null;
     }
 
     try {
       String trainerId =
           _clientData!['trainerId'];
-      if (trainerId.isEmpty) return null;
+      if (trainerId.isEmpty) {
+        print('🔍 Trainer ID is empty');
+        return null;
+      }
 
+      print(
+        '🔍 Getting trainer data for: $trainerId',
+      );
       return await UserService.getTrainerData(
         trainerId,
       );
     } catch (e) {
       print(
-        'Error getting trainer data: $e',
+        '❌ Error getting trainer data: $e',
       );
       return null;
     }
@@ -169,11 +263,14 @@ class UserProvider extends ChangeNotifier {
 
   // Check if client has a trainer assigned
   bool get hasTrainer {
-    return _clientData != null &&
+    final result =
+        _clientData != null &&
         _clientData!['trainerId'] != null &&
         _clientData!['trainerId']
             .toString()
             .isNotEmpty;
+    print('🔍 Has trainer: $result');
+    return result;
   }
 
   // Get client's fitness goals
