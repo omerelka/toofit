@@ -304,4 +304,12 @@ class UserProvider extends ChangeNotifier {
     return _clientData!['totalWorkoutTime'] ??
         0;
   }
+
+  // Refresh user data
+  Future<void> refreshUserData() async {
+    if (_currentUser != null) {
+      print('🔄 Refreshing user data...');
+      await loadUserData(_currentUser!.uid);
+    }
+  }
 }

@@ -1,0 +1,271 @@
+
+TooFit
+Private
+
+
+
+TooFit App Development
+Last message 1 day ago
+Fixing Project Errors
+Last message 1 day ago
+Flutter Project Code Review
+Last message 1 day ago
+Flutter Project Error Resolution
+Last message 2 days ago
+Flutter Project Code Duplication Review
+Last message 2 days ago
+Flutter App Project Errors
+Last message 2 days ago
+Flutter App Development Features
+Last message 2 days ago
+Fitness App Development Setup
+Last message 2 days ago
+Database Code Filling
+Last message 2 days ago
+Firebase Document UID Management
+Last message 3 days ago
+TooFit Fitness App Database Structure
+Last message 3 days ago
+TooFit Trainer Dashboard Development
+Last message 3 days ago
+Flutter App Login Role Navigation Bug
+Last message 4 days ago
+Flutter App Firebase Authentication
+Last message 4 days ago
+Flutter Fitness App Repository
+Last message 4 days ago
+Flutter TooFit App Repository
+Last message 5 days ago
+Git Repository Upload Issue
+Last message 5 days ago
+אפליקציה: תכנון רכיבים
+Last message 5 days ago
+Cross-Platform Mobile App Development
+Last message 7 days ago
+React Native 0.73.0 Android Build Fix
+Last message 7 days ago
+Gradle React Native Plugin Error
+Last message 7 days ago
+React Native Gradle Plugin Configuration
+Last message 8 days ago
+Moving Folder to Desktop
+Last message 8 days ago
+Firebase TypeScript Configuration Errors
+Last message 8 days ago
+look at the repo and tell me h...
+Last message 8 days ago
+Fitness App Repository Review
+Last message 8 days ago
+Git Repository Initialization Guide
+Last message 10 days ago
+Firebase App Git Repository Setup
+Last message 10 days ago
+Project knowledge
+10% of project capacity used
+Retrieving
+
+omerelka/toofit
+main
+
+GITHUB
+
+
+
+אפיון פרוייקט
+433 lines
+
+text
+
+
+
+Firebase structure
+164 lines
+
+text
+
+
+
+Theme data
+8 lines
+
+text
+
+
+
+App colors
+9 lines
+
+text
+
+
+
+Firebase structure
+
+3.53 KB •164 lines
+•
+Formatting may be inconsistent from source
+
+{
+  "chats": {
+    "chat1": {
+      "id": "chat1",
+      "isActive": true,
+      "lastMessage": "Welcome to TooFit! Ready to start your fitness journey?",
+      "participants": [
+        "uid1",
+        "uid2"
+      ]
+    }
+  },
+  "clients": {
+    "VKzYCiuxEEgqLiTzplNv4Ylujnn2": {
+      "age": 0,
+      "assignedWorkouts": {
+        "completedWorkouts": 0,
+        "currentStreak": 0,
+        "fitnessLevel": "beginner"
+      },
+      "goals": {
+        "height": 0,
+        "joinedAt": "29 June 2025 at 15:06:56 UTC+3",
+        "lastWorkout": null
+      },
+      "medicalConditions": {},
+      "totalWorkoutTime": 0,
+      "trainerId": "",
+      "uid": "VKzYCiuxEEgqLiTzplNv4Ylujnn2"
+      "weight": 0
+    }
+  },
+  "daily_tracking": {
+    "uid1": {
+      "bodyFat": 20,
+      "date": "1 July 2025 at 00:00:00 UTC+3",
+      "energy": 3,
+      "measurements": {
+        "arms": 10,
+        "chest": 10,
+        "hips": 10,
+        "waist": 10
+      },
+      "mood": "happy",
+      "notes": "hard",
+      "sleep": 8,
+      "userId": "uid1"
+      "water": 4,
+      "weight": 100
+    }
+  },
+  "exercises": {
+    "5k4TYq0gk0PCNH8Lq2op": {
+      "category": "strength",
+      "difficulty": "beginner",
+      "duration": 30,
+      "equipment": [
+        "none"
+      ],
+      "exerciseId": "pushup001",
+      "imageUrl": "imageURL Here",
+      "instructions": "תשאיר את הגוף ישר",
+      "muscleGroups": [
+        "chest",
+        "triceps"
+      ],
+      "name": "Push Up",
+      "videoUrl": "videoURL Here"
+    }
+  },
+  "notifications": {
+    "notif1": {
+      "body": "Your trainer Sarah has been assigned to help you reach your goals",
+      "read": false,
+      "title": "Welcome to TooFit!",
+      "type": "welcome",
+      "userId": "uid2"
+    }
+  },
+  "nutrition_goals": {
+    "uid1": {
+      "carbs": 100,
+      "dailyCalories": 1000,
+      "fat": 100,
+      "isActive": true,
+      "protein": 100,
+      "userId": "uid1"
+    }
+  },
+  "trainers": {
+    "uid1": {
+      "buisnessName": "TooFit",
+      "clients": [
+        "uid2"
+      ],
+      "experience": 3,
+      "rating": 5,
+      "specializations": [
+        "strength",
+        "cardio"
+      ],
+      "totalClients": 1,
+      "uid": "uid1"
+    }
+  },
+  "users": {
+    "VKzYCiuxEEgqLiTzplNv4Ylujnn2": {
+      "createdAt": "29 June 2025 at 15:06:56 UTC+3",
+      "email": "trainer@example.com",
+      "fcmToken": "",
+      "firstName": "Idan",
+      "isActive": true,
+      "lastLoginAt": "30 June 2025 at 14:20:22 UTC+3",
+      "lastName": "\u05d7\u05d3\u05e9",
+      "role": "trainer",
+      "uid": "VKzYCiuxEEgqLiTzplNv4Ylujnn2"
+    }
+  },
+  "workout_sessions": {
+    "sessionId": {
+      "endTime": "1 July 2025 at 00:00:00 UTC+3",
+      "exercises": [
+        "exerciseId",
+        {
+          "set": {
+            "duration": 30,
+            "reps": 4,
+            "restTime": 10,
+            "weight": 5
+          }
+        },
+      "notes": "תשאיר את הגוף ישר"
+      "rating": 3
+      "SessionId": "session1"
+      ],
+      "rating": 3,
+      "status": "active"
+      "userId": "uid1"
+      "startTime": "1 July 2025 at 00:00:00 UTC+3"
+      "workoutId": "pushup001"
+    }
+  },
+  "workouts": {
+    "workout1": {
+      "assignedClients": [
+        "uid2"
+      ],
+      "category": "strength",
+      "description": "Focus on chest, shoulders, and arms",
+      "difficulty": "beginner",
+      "equipment": [
+        "dumbbells",
+        "mat"
+      ],
+      "estimatedDuration": 30,
+      "exercises": [
+        ""
+      ],
+      "isActive": true,
+      "name": "Upper Body Strength"
+      "trainerId":"uid1"
+    }
+  }
+}

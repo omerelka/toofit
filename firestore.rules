@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Users collection - authenticated users can read/write their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null;
+    }
+    
+    // Trainers collection - authenticated users can read/write their own trainer data
+    match /trainers/{trainerId} {
+      allow read, write: if request.auth != null && request.auth.uid == trainerId;
+      allow create: if request.auth != null;
+    }
+    
+    // Clients collection - authenticated users can read/write their own client data
+    match /clients/{clientId} {
+      allow read, write: if request.auth != null && request.auth.uid == clientId;
+      allow create: if request.auth != null;
+    }
+    
+    // *** NEW: Exercises collection - Allow authenticated users to read and create ***
+    match /exercises/{exerciseId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && resource.data.createdBy == 'system';
+    }
+    
+    // *** NEW: Workouts collection - Allow authenticated users to read and create ***
+    match /workouts/{workoutId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && (
+        resource.data.createdBy == 'system' || 
+        resource.data.trainerId == request.auth.uid
+      );
+    }
+    
+    // Chats collection
+    match /chats/{chatId} {
+      allow read, write: if request.auth != null && request.auth.uid in resource.data.participants;
+      allow create: if request.auth != null;
+    }
+    
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null;
+    }
+    
+    // Daily tracking collection
+    match /daily_tracking/{trackingId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null;
+    }
+    
+    // Nutrition goals collection
+    match /nutrition_goals/{goalId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null;
+    }
+    
+    // Workout sessions collection
+    match /workout_sessions/{sessionId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null;
+    }
+  }
+}

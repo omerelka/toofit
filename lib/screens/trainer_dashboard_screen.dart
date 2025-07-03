@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/user_provider.dart';
+import '../services/user_service.dart';
 
 class TrainerDashboardScreen
     extends StatefulWidget {
@@ -16,6 +17,7 @@ class TrainerDashboardScreen
 class _TrainerDashboardScreenState
     extends State<TrainerDashboardScreen> {
   int _selectedIndex = 0;
+  bool _workoutsLoadAttempted = false;
 
   // צבעים
   static const Color primaryPurple = Color(
@@ -57,8 +59,8 @@ class _TrainerDashboardScreenState
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(
-              0.1,
+            color: Colors.black.withValues(
+              alpha: 0.1,
             ),
             blurRadius: 10,
             offset: const Offset(0, -5),
@@ -151,7 +153,7 @@ class _TrainerDashboardScreenState
           end: Alignment.bottomLeft,
           colors: [
             primaryPurple,
-            primaryPurple.withOpacity(0.8),
+            primaryPurple.withValues(alpha: 0.8),
           ],
         ),
         borderRadius: BorderRadius.circular(
@@ -253,12 +255,12 @@ class _TrainerDashboardScreenState
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(
           16,
         ),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -279,7 +281,7 @@ class _TrainerDashboardScreenState
             title,
             style: TextStyle(
               fontSize: 12,
-              color: color.withOpacity(0.8),
+              color: color.withValues(alpha: 0.8),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -369,13 +371,13 @@ class _TrainerDashboardScreenState
           boxShadow: [
             BoxShadow(
               color: Colors.black
-                  .withOpacity(0.05),
+                  .withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
           ],
           border: Border.all(
-            color: color.withOpacity(0.2),
+            color: color.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -521,7 +523,7 @@ class _TrainerDashboardScreenState
     return Consumer<UserProvider>(
       builder: (context, userProvider, _) {
         final trainerData = userProvider.trainerData;
-        final clientIds = trainerData?['clientIds'] as List<dynamic>? ?? [];
+        final clientIds = trainerData?['clientIds'] as List<dynamic>? ?? _getMockClientIds();
         
         return SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -617,6 +619,13 @@ class _TrainerDashboardScreenState
         final trainerData = userProvider.trainerData;
         final workouts = trainerData?['workouts'] as List<dynamic>? ?? [];
         
+        // Auto-load workouts if list is empty and we haven't tried loading yet
+        if (workouts.isEmpty && !_workoutsLoadAttempted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _loadSharedWorkouts();
+          });
+        }
+        
         return SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -673,25 +682,44 @@ class _TrainerDashboardScreenState
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'צור תוכניות אימון עבור המתאמנים שלך',
+                        'טען אימונים מוכנים או צור תוכניות אימון חדשות',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey,
                         ),
                       ),
                       const SizedBox(height: 20),
-                      ElevatedButton.icon(
-                        onPressed: () => _showCreateWorkoutDialog(context),
-                        icon: const Icon(Icons.add),
-                        label: const Text('צור אימון ראשון'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryPurple,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: () => _loadSharedWorkouts(),
+                            icon: const Icon(Icons.download),
+                            label: const Text('טען אימונים'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 12),
+                          ElevatedButton.icon(
+                            onPressed: () => _showCreateWorkoutDialog(context),
+                            icon: const Icon(Icons.add),
+                            label: const Text('צור אימון'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryPurple,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -720,7 +748,7 @@ class _TrainerDashboardScreenState
                 radius: 60,
                 backgroundColor:
                     primaryPurple
-                        .withOpacity(0.1),
+                        .withValues(alpha: 0.1),
                 child: const Icon(
                   Icons.person,
                   size: 60,
@@ -830,6 +858,8 @@ class _TrainerDashboardScreenState
   }
 
   Widget _buildClientCard(String clientId) {
+    final clientData = _getPlaceholderClientData(clientId);
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -838,7 +868,7 @@ class _TrainerDashboardScreenState
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -848,11 +878,14 @@ class _TrainerDashboardScreenState
         children: [
           CircleAvatar(
             radius: 25,
-            backgroundColor: primaryPurple.withOpacity(0.1),
-            child: const Icon(
-              Icons.person,
-              color: primaryPurple,
-              size: 24,
+            backgroundColor: primaryPurple.withValues(alpha: 0.1),
+            child: Text(
+              clientData['initials'],
+              style: const TextStyle(
+                color: primaryPurple,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           const SizedBox(width: 16),
@@ -861,18 +894,36 @@ class _TrainerDashboardScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'מתאמן #${clientId.substring(0, 8)}',
+                  clientData['name'],
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      clientData['isActive'] ? Icons.circle : Icons.circle_outlined,
+                      size: 8,
+                      color: clientData['isActive'] ? Colors.green : Colors.grey,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      clientData['status'],
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: clientData['isActive'] ? Colors.green[600] : Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
                 Text(
-                  'פעיל השבוע',
+                  '${clientData['completedWorkouts']} אימונים השלים',
                   style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.green[600],
+                    fontSize: 12,
+                    color: Colors.grey[600],
                   ),
                 ),
               ],
@@ -880,25 +931,70 @@ class _TrainerDashboardScreenState
           ),
           Column(
             children: [
-              IconButton(
-                onPressed: () {
-                  // View client details
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('פרטי מתאמן $clientId - בקרוב'),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: () => _showClientDetails(context, clientId),
+                    icon: const Icon(
+                      Icons.visibility,
+                      color: primaryPurple,
+                      size: 20,
                     ),
-                  );
-                },
-                icon: const Icon(
-                  Icons.visibility,
-                  color: primaryPurple,
-                ),
+                    tooltip: 'צפה בפרטים',
+                  ),
+                  IconButton(
+                    onPressed: () => _showEditClientDialog(context, clientId),
+                    icon: const Icon(
+                      Icons.edit,
+                      color: Colors.orange,
+                      size: 20,
+                    ),
+                    tooltip: 'ערוך פרטים',
+                  ),
+                  IconButton(
+                    onPressed: () => _showAssignWorkoutDialog(context, clientId),
+                    icon: const Icon(
+                      Icons.fitness_center,
+                      color: Colors.green,
+                      size: 20,
+                    ),
+                    tooltip: 'הקצה אימון',
+                  ),
+                ],
               ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  List<String> _getMockClientIds() {
+    return [
+      'client_001_elia',
+      'client_002_yossi',
+      'client_003_michal',
+      'client_004_danny',
+      'client_005_sarah',
+    ];
+  }
+
+  Map<String, dynamic> _getPlaceholderClientData(String clientId) {
+    final names = ['אליה כהן', 'יוסי לוי', 'מיכל אברהם', 'דני בן דוד', 'שרה מלכה'];
+    final random = clientId.hashCode % names.length;
+    final name = names[random];
+    final initials = name.split(' ').map((word) => word[0]).join('');
+    final isActive = clientId.hashCode % 3 != 0;
+    final completedWorkouts = 3 + (clientId.hashCode % 15);
+    
+    return {
+      'name': name,
+      'initials': initials,
+      'isActive': isActive,
+      'status': isActive ? 'פעיל השבוע' : 'לא פעיל',
+      'completedWorkouts': completedWorkouts,
+    };
   }
 
   Widget _buildWorkoutCard(Map<String, dynamic> workout) {
@@ -910,7 +1006,7 @@ class _TrainerDashboardScreenState
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -924,7 +1020,7 @@ class _TrainerDashboardScreenState
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: primaryPurple.withOpacity(0.1),
+                  color: primaryPurple.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
@@ -1008,53 +1104,135 @@ class _TrainerDashboardScreenState
 
   void _showAddClientDialog(BuildContext context) {
     final TextEditingController emailController = TextEditingController();
+    final TextEditingController nameController = TextEditingController();
+    final TextEditingController ageController = TextEditingController();
+    final TextEditingController heightController = TextEditingController();
+    final TextEditingController weightController = TextEditingController();
+    String selectedFitnessLevel = 'beginner';
     
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('הוספת מתאמן חדש'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: emailController,
-                decoration: const InputDecoration(
-                  labelText: 'אימייל המתאמן',
-                  hintText: 'example@email.com',
-                  border: OutlineInputBorder(),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('הוספת מתאמן חדש'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: emailController,
+                      decoration: const InputDecoration(
+                        labelText: 'אימייל המתאמן',
+                        hintText: 'example@email.com',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'שם מלא',
+                        hintText: 'דוגמה: אליה כהן',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: ageController,
+                            decoration: const InputDecoration(
+                              labelText: 'גיל',
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: heightController,
+                            decoration: const InputDecoration(
+                              labelText: 'גובה (cm)',
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: weightController,
+                            decoration: const InputDecoration(
+                              labelText: 'משקל (kg)',
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: selectedFitnessLevel,
+                      decoration: const InputDecoration(
+                        labelText: 'רמת כושר',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'beginner', child: Text('מתחיל')),
+                        DropdownMenuItem(value: 'intermediate', child: Text('בינוני')),
+                        DropdownMenuItem(value: 'advanced', child: Text('מתקדם')),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          selectedFitnessLevel = value!;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'המתאמן יקבל הזמנה לאפליקציה',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
                 ),
-                keyboardType: TextInputType.emailAddress,
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'המתאמן יקבל הזמנה לאפליקציה',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('ביטול'),
                 ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('ביטול'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (emailController.text.isNotEmpty) {
-                  _addClient(emailController.text);
-                  Navigator.of(context).pop();
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryPurple,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('הוסף'),
-            ),
-          ],
+                ElevatedButton(
+                  onPressed: () {
+                    if (emailController.text.isNotEmpty && nameController.text.isNotEmpty) {
+                      _addClientWithDetails({
+                        'email': emailController.text,
+                        'name': nameController.text,
+                        'age': ageController.text,
+                        'height': heightController.text,
+                        'weight': weightController.text,
+                        'fitnessLevel': selectedFitnessLevel,
+                      });
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryPurple,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('הוסף'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -1204,5 +1382,371 @@ class _TrainerDashboardScreenState
         );
       },
     );
+  }
+
+  void _showClientDetails(BuildContext context, String clientId) {
+    final clientData = _getPlaceholderClientData(clientId);
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('פרטי ${clientData['name']}'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildDetailRow('מזהה:', clientId.substring(0, 8)),
+                _buildDetailRow('מספר אימונים שהושלמו:', '${clientData['completedWorkouts']}'),
+                _buildDetailRow('סטטוס:', clientData['status']),
+                _buildDetailRow('גיל:', '${25 + (clientId.hashCode % 20)}'),
+                _buildDetailRow('גובה:', '${165 + (clientId.hashCode % 25)} ס"מ'),
+                _buildDetailRow('משקל:', '${60 + (clientId.hashCode % 40)} ק"ג'),
+                _buildDetailRow('רמת כושר:', clientId.hashCode % 3 == 0 ? 'מתחיל' : clientId.hashCode % 3 == 1 ? 'בינוני' : 'מתקדם'),
+                const SizedBox(height: 16),
+                const Text('אימונים שהוקצו:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                _buildAssignedWorkoutsList(clientId),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('סגור'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _showEditClientDialog(context, clientId);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryPurple,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('עריכה'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+          Expanded(
+            child: Text(value),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAssignedWorkoutsList(String clientId) {
+    final workouts = ['אימון כוח עליון', 'קרדיו בסיסי', 'אימון פונקציונלי'];
+    return Column(
+      children: workouts.map((workout) => Container(
+        margin: const EdgeInsets.only(bottom: 4),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.fitness_center, size: 16),
+            const SizedBox(width: 8),
+            Expanded(child: Text(workout, style: const TextStyle(fontSize: 14))),
+            const Icon(Icons.check_circle, color: Colors.green, size: 16),
+          ],
+        ),
+      )).toList(),
+    );
+  }
+
+  void _showEditClientDialog(BuildContext context, String clientId) {
+    final clientData = _getPlaceholderClientData(clientId);
+    final TextEditingController nameController = TextEditingController(text: clientData['name']);
+    final TextEditingController ageController = TextEditingController(text: '${25 + (clientId.hashCode % 20)}');
+    final TextEditingController heightController = TextEditingController(text: '${165 + (clientId.hashCode % 25)}');
+    final TextEditingController weightController = TextEditingController(text: '${60 + (clientId.hashCode % 40)}');
+    String selectedFitnessLevel = clientId.hashCode % 3 == 0 ? 'beginner' : clientId.hashCode % 3 == 1 ? 'intermediate' : 'advanced';
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('עריכת פרטי ${clientData['name']}'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'שם מלא',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: ageController,
+                            decoration: const InputDecoration(
+                              labelText: 'גיל',
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: heightController,
+                            decoration: const InputDecoration(
+                              labelText: 'גובה (cm)',
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: weightController,
+                            decoration: const InputDecoration(
+                              labelText: 'משקל (kg)',
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: selectedFitnessLevel,
+                      decoration: const InputDecoration(
+                        labelText: 'רמת כושר',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'beginner', child: Text('מתחיל')),
+                        DropdownMenuItem(value: 'intermediate', child: Text('בינוני')),
+                        DropdownMenuItem(value: 'advanced', child: Text('מתקדם')),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          selectedFitnessLevel = value!;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('ביטול'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('פרטי המתאמן עודכנו בהצלחה'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                    // TODO: Implement actual client update logic
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryPurple,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('שמור'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showAssignWorkoutDialog(BuildContext context, String clientId) {
+    final clientData = _getPlaceholderClientData(clientId);
+    final availableWorkouts = [
+      {'name': 'אימון כוח עליון', 'duration': '45 דקות', 'difficulty': 'בינוני'},
+      {'name': 'קרדיו בסיסי', 'duration': '30 דקות', 'difficulty': 'קל'},
+      {'name': 'אימון פונקציונלי', 'duration': '60 דקות', 'difficulty': 'מתקדם'},
+      {'name': 'אימון רגליים', 'duration': '50 דקות', 'difficulty': 'קשה'},
+      {'name': 'יוגה למתחילים', 'duration': '40 דקות', 'difficulty': 'קל'},
+    ];
+    String? selectedWorkout;
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('הקצאת אימון ל${clientData['name']}'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('בחר אימון להקצאה:'),
+                    const SizedBox(height: 16),
+                    ...availableWorkouts.map((workout) => Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: selectedWorkout == workout['name'] ? primaryPurple : Colors.grey[300]!,
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: ListTile(
+                        leading: Radio<String>(
+                          value: workout['name']!,
+                          groupValue: selectedWorkout,
+                          onChanged: (value) {
+                            setState(() {
+                              selectedWorkout = value;
+                            });
+                          },
+                        ),
+                        title: Text(workout['name']!),
+                        subtitle: Text('${workout['duration']} • ${workout['difficulty']}'),
+                        onTap: () {
+                          setState(() {
+                            selectedWorkout = workout['name'];
+                          });
+                        },
+                      ),
+                    )).toList(),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('ביטול'),
+                ),
+                ElevatedButton(
+                  onPressed: selectedWorkout != null ? () {
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('האימון "$selectedWorkout" הוקצה ל${clientData['name']}'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                    // TODO: Implement actual workout assignment logic
+                  } : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryPurple,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('הקצה'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _addClientWithDetails(Map<String, dynamic> clientData) {
+    print('🔧 Adding client: ${clientData['name']}');
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('מתאמן ${clientData['name']} נוסף בהצלחה'),
+        backgroundColor: Colors.green,
+      ),
+    );
+    
+    // TODO: Implement actual client addition logic
+    // This would typically involve:
+    // 1. Creating a client document in Firestore
+    // 2. Sending an invitation email
+    // 3. Adding the client ID to the trainer's client list
+    // 4. Updating the UI to show the new client
+  }
+
+  void _loadSharedWorkouts() async {
+    try {
+      print('🔧 Loading shared workouts...');
+      
+      // Mark that we've attempted to load workouts to prevent infinite loops
+      setState(() {
+        _workoutsLoadAttempted = true;
+      });
+      
+      // Check if widget is still mounted before showing snackbar
+      if (!mounted) return;
+      
+      // Show loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('טוען אימונים מוכנים...'),
+          backgroundColor: Colors.blue,
+        ),
+      );
+      
+      // Initialize shared workouts database
+      await UserService.initializeSharedWorkoutsForAllTrainers();
+      
+      // Check if widget is still mounted before proceeding
+      if (!mounted) return;
+      
+      // Refresh user data to show the new workouts
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.refreshUserData();
+      
+      // Check if widget is still mounted before showing success message
+      if (!mounted) return;
+      
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ 5 אימונים בעברית נטענו בהצלחה!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
+      print('✅ Shared workouts loaded successfully');
+    } catch (e) {
+      print('❌ Error loading shared workouts: $e');
+      
+      // Check if widget is still mounted before showing error message
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('❌ שגיאה בטעינת האימונים'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

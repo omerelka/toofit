@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'screens/login_screen.dart';
+import 'screens/trainer_dashboard_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/user_provider.dart';
 import 'firebase_options.dart';
@@ -216,7 +217,7 @@ class RoleBasedNavigation
           print(
             '💪 Navigating to trainer dashboard',
           );
-          return const TrainerDashboardPlaceholder();
+          return const TrainerDashboardScreen();
         } else {
           print(
             '❌ Unknown role: ${user.role}, returning to login',

@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -70,6 +67,15 @@ class DefaultFirebaseOptions {
     projectId: 'toofit-production',
     storageBucket: 'toofit-production.firebasestorage.app',
     iosBundleId: 'com.toofit',
+  );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyBII9Hxp0wT4T1R7lKMzqruHDGbooCTiNs',
+    appId: '1:264343991501:web:YOUR_WEB_APP_ID_HERE',
+    messagingSenderId: '264343991501',
+    projectId: 'toofit-production',
+    storageBucket: 'toofit-production.firebasestorage.app',
+    authDomain: 'toofit-production.firebaseapp.com',
   );
 
 }
