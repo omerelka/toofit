@@ -518,28 +518,190 @@ class _TrainerDashboardScreenState
   }
 
   Widget _buildClientsTab() {
-    return const Center(
-      child: Text(
-        'רשימת מתאמנים\n(בקרוב...)',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 18,
-          color: Colors.grey,
-        ),
-      ),
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, _) {
+        final trainerData = userProvider.trainerData;
+        final clientIds = trainerData?['clientIds'] as List<dynamic>? ?? [];
+        
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'המתאמנים שלי',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: darkGray,
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => _showAddClientDialog(context),
+                    icon: const Icon(Icons.add),
+                    label: const Text('הוסף מתאמן'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryPurple,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              if (clientIds.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: lightGray,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.people_outline,
+                        size: 64,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'אין מתאמנים עדיין',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'הוסף מתאמנים חדשים כדי להתחיל',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton.icon(
+                        onPressed: () => _showAddClientDialog(context),
+                        icon: const Icon(Icons.add),
+                        label: const Text('הוסף מתאמן ראשון'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryPurple,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                ...clientIds.map((clientId) => _buildClientCard(clientId.toString())),
+            ],
+          ),
+        );
+      },
     );
   }
 
   Widget _buildWorkoutsTab() {
-    return const Center(
-      child: Text(
-        'ניהול אימונים\n(בקרוב...)',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 18,
-          color: Colors.grey,
-        ),
-      ),
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, _) {
+        final trainerData = userProvider.trainerData;
+        final workouts = trainerData?['workouts'] as List<dynamic>? ?? [];
+        
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'תוכניות האימון שלי',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: darkGray,
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => _showCreateWorkoutDialog(context),
+                    icon: const Icon(Icons.add),
+                    label: const Text('צור אימון'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryPurple,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              if (workouts.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: lightGray,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.fitness_center_outlined,
+                        size: 64,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'אין תוכניות אימון עדיין',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'צור תוכניות אימון עבור המתאמנים שלך',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton.icon(
+                        onPressed: () => _showCreateWorkoutDialog(context),
+                        icon: const Icon(Icons.add),
+                        label: const Text('צור אימון ראשון'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryPurple,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                ...workouts.map((workout) => _buildWorkoutCard(workout as Map<String, dynamic>)),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -664,6 +826,383 @@ class _TrainerDashboardScreenState
           12,
         ),
       ),
+    );
+  }
+
+  Widget _buildClientCard(String clientId) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 25,
+            backgroundColor: primaryPurple.withOpacity(0.1),
+            child: const Icon(
+              Icons.person,
+              color: primaryPurple,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'מתאמן #${clientId.substring(0, 8)}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'פעיל השבוע',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.green[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            children: [
+              IconButton(
+                onPressed: () {
+                  // View client details
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('פרטי מתאמן $clientId - בקרוב'),
+                    ),
+                  );
+                },
+                icon: const Icon(
+                  Icons.visibility,
+                  color: primaryPurple,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWorkoutCard(Map<String, dynamic> workout) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: primaryPurple.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.fitness_center,
+                  color: primaryPurple,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      workout['name'] ?? 'אימון חדש',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${workout['duration'] ?? '30'} דקות • ${workout['exercises']?.length ?? 0} תרגילים',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuButton(
+                icon: const Icon(Icons.more_vert),
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit),
+                        SizedBox(width: 8),
+                        Text('ערוך'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('מחק', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
+                  ),
+                ],
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('עריכת אימון - בקרוב')),
+                    );
+                  } else if (value == 'delete') {
+                    _deleteWorkout(workout);
+                  }
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (workout['description'] != null && workout['description'].isNotEmpty)
+            Text(
+              workout['description'],
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddClientDialog(BuildContext context) {
+    final TextEditingController emailController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('הוספת מתאמן חדש'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  labelText: 'אימייל המתאמן',
+                  hintText: 'example@email.com',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'המתאמן יקבל הזמנה לאפליקציה',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('ביטול'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (emailController.text.isNotEmpty) {
+                  _addClient(emailController.text);
+                  Navigator.of(context).pop();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryPurple,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('הוסף'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showCreateWorkoutDialog(BuildContext context) {
+    final TextEditingController nameController = TextEditingController();
+    final TextEditingController descriptionController = TextEditingController();
+    final TextEditingController durationController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('יצירת אימון חדש'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'שם האימון',
+                    hintText: 'לדוגמה: אימון כוח עליון',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'תיאור (אופציונלי)',
+                    hintText: 'תיאור קצר של האימון',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: durationController,
+                  decoration: const InputDecoration(
+                    labelText: 'משך זמן (דקות)',
+                    hintText: '30',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('ביטול'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (nameController.text.isNotEmpty) {
+                  _createWorkout(
+                    nameController.text,
+                    descriptionController.text,
+                    int.tryParse(durationController.text) ?? 30,
+                  );
+                  Navigator.of(context).pop();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryPurple,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('צור'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _addClient(String email) {
+    print('🔧 Adding client with email: $email');
+    
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('הזמנה נשלחה ל-$email'),
+        backgroundColor: Colors.green,
+      ),
+    );
+    
+    // TODO: Implement actual client invitation logic
+    // This would typically involve:
+    // 1. Sending an invitation email
+    // 2. Creating a pending invitation record
+    // 3. Updating the trainer's client list when accepted
+  }
+
+  void _createWorkout(String name, String description, int duration) {
+    print('🔧 Creating workout: $name, duration: $duration minutes');
+    
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('אימון "$name" נוצר בהצלחה'),
+        backgroundColor: Colors.green,
+      ),
+    );
+    
+    // TODO: Implement actual workout creation logic
+    // This would typically involve:
+    // 1. Creating a workout document in Firestore
+    // 2. Adding it to the trainer's workout list
+    // 3. Updating the UI to show the new workout
+  }
+
+  void _deleteWorkout(Map<String, dynamic> workout) {
+    print('🔧 Deleting workout: ${workout['name']}');
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('מחיקת אימון'),
+          content: Text('האם אתה בטוח שברצונך למחוק את האימון "${workout['name']}"?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('ביטול'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('האימון נמחק בהצלחה'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                // TODO: Implement actual workout deletion logic
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('מחק'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
