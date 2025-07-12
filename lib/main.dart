@@ -11,20 +11,12 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  print('🚀 Starting app initialization...');
-
   try {
     await Firebase.initializeApp(
-      options: DefaultFirebaseOptions
-          .currentPlatform,
-    );
-    print(
-      '✅ Firebase initialized successfully',
+      options: DefaultFirebaseOptions.currentPlatform,
     );
   } catch (e) {
-    print(
-      '❌ Firebase initialization failed: $e',
-    );
+    // Handle initialization error silently or show error UI
   }
 
   runApp(const MyApp());
@@ -35,25 +27,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('🎯 Building MyApp...');
-
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (_) {
-            print(
-              '🔧 Creating AuthProvider...',
-            );
-            return AuthProvider();
-          },
+          create: (_) => AuthProvider(),
         ),
         ChangeNotifierProvider(
-          create: (_) {
-            print(
-              '🔧 Creating UserProvider...',
-            );
-            return UserProvider();
-          },
+          create: (_) => UserProvider(),
         ),
       ],
       child: MaterialApp(
@@ -94,19 +74,17 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('🔍 Building AuthWrapper...');
-
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, _) {
-        print(
-          '🔍 AuthWrapper state: isLoading=${authProvider.isLoading}, isAuthenticated=${authProvider.isAuthenticated}',
-        );
+    return Consumer2<AuthProvider, UserProvider>(
+      builder: (context, authProvider, userProvider, _) {
+        // Clear user data if not authenticated
+        if (!authProvider.isAuthenticated && userProvider.currentUser != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            userProvider.initializeUser(null);
+          });
+        }
 
         // Show loading while checking auth state
         if (authProvider.isLoading) {
-          print(
-            '⏳ Showing loading screen...',
-          );
           return const Scaffold(
             body: Center(
               child: Column(
@@ -138,16 +116,10 @@ class AuthWrapper extends StatelessWidget {
 
         // Show login if not authenticated
         if (!authProvider.isAuthenticated) {
-          print(
-            '🔑 User not authenticated, showing login screen',
-          );
           return const LoginScreen();
         }
 
         // Show appropriate dashboard based on user role
-        print(
-          '✅ User authenticated, navigating to role-based navigation',
-        );
         return const RoleBasedNavigation();
       },
     );
@@ -161,21 +133,19 @@ class RoleBasedNavigation
 
   @override
   Widget build(BuildContext context) {
-    print(
-      '🎯 Building RoleBasedNavigation...',
-    );
-
-    return Consumer<UserProvider>(
-      builder: (context, userProvider, _) {
-        print(
-          '🔍 UserProvider state: isLoading=${userProvider.isLoading}, user=${userProvider.currentUser?.firstName ?? 'null'}',
-        );
+    return Consumer2<AuthProvider, UserProvider>(
+      builder: (context, authProvider, userProvider, _) {
+        // Initialize user data if authenticated but user not loaded
+        if (authProvider.isAuthenticated && 
+            userProvider.currentUser == null && 
+            !userProvider.isLoading) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            userProvider.initializeUser(authProvider.currentFirebaseUser?.uid);
+          });
+        }
 
         // Show loading while fetching user data
-        if (userProvider.isLoading ||
-            userProvider.currentUser ==
-                null) {
-          print('⏳ Loading user data...');
+        if (userProvider.isLoading || userProvider.currentUser == null) {
           return const Scaffold(
             body: Center(
               child: Column(
@@ -201,27 +171,14 @@ class RoleBasedNavigation
           );
         }
 
-        final user =
-            userProvider.currentUser!;
-        print(
-          '👤 User loaded: ${user.firstName} ${user.lastName}, role: ${user.role}',
-        );
+        final user = userProvider.currentUser!;
 
         // Navigate based on role
         if (user.role == 'client') {
-          print(
-            '🏃‍♀️ Navigating to client dashboard',
-          );
           return const ClientDashboardPlaceholder();
         } else if (user.role == 'trainer') {
-          print(
-            '💪 Navigating to trainer dashboard',
-          );
           return const TrainerDashboardScreen();
         } else {
-          print(
-            '❌ Unknown role: ${user.role}, returning to login',
-          );
           return const LoginScreen();
         }
       },
@@ -247,7 +204,6 @@ class _ClientDashboardPlaceholderState extends State<ClientDashboardPlaceholder>
 
   @override
   Widget build(BuildContext context) {
-    print('🏠 Building Client Dashboard');
     
     return Scaffold(
       backgroundColor: Colors.white,
@@ -1202,7 +1158,6 @@ class _ClientDashboardPlaceholderState extends State<ClientDashboardPlaceholder>
   }
 
   void _startWorkout() {
-    print('🏃‍♂️ Starting workout...');
     
     showDialog(
       context: context,
@@ -1238,72 +1193,11 @@ class _ClientDashboardPlaceholderState extends State<ClientDashboardPlaceholder>
   }
 }
 
-class TrainerDashboardPlaceholder
-    extends StatelessWidget {
-  const TrainerDashboardPlaceholder({
-    super.key,
-  });
+class TrainerDashboardPlaceholder extends StatelessWidget {
+  const TrainerDashboardPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {
-    print('🏠 Building Trainer Dashboard');
-    final userProvider =
-        Provider.of<UserProvider>(context);
-    final user = userProvider.currentUser!;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'ברוך הבא ${user.firstName}!',
-        ),
-        backgroundColor: const Color(
-          0xFF714bf2,
-        ),
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            onPressed: () async {
-              print(
-                '🚪 User logging out...',
-              );
-              await Provider.of<
-                    AuthProvider
-                  >(context, listen: false)
-                  .signOut();
-            },
-            icon: const Icon(Icons.logout),
-          ),
-        ],
-      ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.people,
-              size: 80,
-              color: Color(0xFF714bf2),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Trainer Dashboard',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 10),
-            Text(
-              '(בקרוב...)',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return const TrainerDashboardScreen();
   }
 }

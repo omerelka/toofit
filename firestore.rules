@@ -12,6 +12,10 @@ service cloud.firestore {
     match /trainers/{trainerId} {
       allow read, write: if request.auth != null && request.auth.uid == trainerId;
       allow create: if request.auth != null;
+      // Allow approved trainers to read pending trainer requests for approval
+      allow read: if request.auth != null && 
+        exists(/databases/$(database)/documents/trainers/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/trainers/$(request.auth.uid)).data.isApproved == true;
     }
     
     // Clients collection - authenticated users can read/write their own client data

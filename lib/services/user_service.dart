@@ -7,79 +7,45 @@ class UserService {
       FirebaseFirestore.instance;
 
   // Get user by UID with fallback creation
-  static Future<UserModel?> getUserById(
-    String uid,
-  ) async {
+  static Future<UserModel?> getUserById(String uid) async {
     try {
-      print(
-        '🔍 Fetching user document for: $uid',
-      );
-
       DocumentSnapshot doc = await _firestore
           .collection('users')
           .doc(uid)
           .get();
 
       if (doc.exists) {
-        print('✅ User document found');
         return UserModel.fromFirestore(doc);
       } else {
-        print(
-          '⚠️ User document not found, creating fallback user...',
-        );
-
         // Get the current Firebase user info
-        User? firebaseUser = FirebaseAuth
-            .instance
-            .currentUser;
+        User? firebaseUser = FirebaseAuth.instance.currentUser;
         if (firebaseUser != null) {
-          return await _createFallbackUser(
-            firebaseUser,
-          );
+          return await _createFallbackUser(firebaseUser);
         } else {
-          print(
-            '❌ No Firebase user found to create fallback',
-          );
           return null;
         }
       }
     } catch (e) {
-      print('❌ Error getting user: $e');
       return null;
     }
   }
 
   // Create a fallback user document when one doesn't exist
-  static Future<UserModel?>
-  _createFallbackUser(
-    User firebaseUser,
-  ) async {
+  static Future<UserModel?> _createFallbackUser(User firebaseUser) async {
     try {
-      print(
-        '🔧 Creating fallback user document for: ${firebaseUser.uid}',
-      );
-
       // Extract name from email or use defaults
-      String email =
-          firebaseUser.email ?? '';
+      String email = firebaseUser.email ?? '';
       String firstName = 'משתמש';
       String lastName = 'חדש';
 
       // Try to extract name from email
       if (email.isNotEmpty) {
-        String localPart = email.split(
-          '@',
-        )[0];
+        String localPart = email.split('@')[0];
         if (localPart.contains('.')) {
-          List<String> nameParts = localPart
-              .split('.');
-          firstName = _capitalize(
-            nameParts[0],
-          );
+          List<String> nameParts = localPart.split('.');
+          firstName = _capitalize(nameParts[0]);
           if (nameParts.length > 1) {
-            lastName = _capitalize(
-              nameParts[1],
-            );
+            lastName = _capitalize(nameParts[1]);
           }
         } else {
           firstName = _capitalize(localPart);
@@ -92,29 +58,17 @@ class UserService {
         'email': email,
         'firstName': firstName,
         'lastName': lastName,
-        'role':
-            'client', // Default to client
-        'createdAt':
-            FieldValue.serverTimestamp(),
-        'lastLoginAt':
-            FieldValue.serverTimestamp(),
+        'role': 'client', // Default to client
+        'createdAt': FieldValue.serverTimestamp(),
+        'lastLoginAt': FieldValue.serverTimestamp(),
         'isActive': true,
         'fcmToken': '',
       };
 
-      await _firestore
-          .collection('users')
-          .doc(firebaseUser.uid)
-          .set(userData);
+      await _firestore.collection('users').doc(firebaseUser.uid).set(userData);
 
       // Create client document as well
-      await _createDefaultClientData(
-        firebaseUser.uid,
-      );
-
-      print(
-        '✅ Fallback user created successfully',
-      );
+      await _createDefaultClientData(firebaseUser.uid);
 
       // Return the created user
       return UserModel(
@@ -129,73 +83,57 @@ class UserService {
         fcmToken: '',
       );
     } catch (e) {
-      print(
-        '❌ Error creating fallback user: $e',
-      );
       return null;
     }
   }
 
   // Create default client data
-  static Future<void>
-  _createDefaultClientData(
-    String uid,
-  ) async {
+  static Future<void> _createDefaultClientData(String uid) async {
     try {
-      await _firestore
-          .collection('clients')
-          .doc(uid)
-          .set({
-            'uid': uid,
-            'trainerId': '',
-            'age': 0,
-            'height': 0,
-            'weight': 0,
-            'fitnessLevel': 'beginner',
-            'goals': [],
-            'medicalConditions': [],
-            'assignedWorkouts': [],
-            'completedWorkouts': 0,
-            'totalWorkoutTime': 0,
-            'currentStreak': 0,
-            'lastWorkout': null,
-            'joinedAt':
-                FieldValue.serverTimestamp(),
-          });
-      print('✅ Default client data created');
+      await _firestore.collection('clients').doc(uid).set({
+        'uid': uid,
+        'trainerId': '',
+        'age': 0,
+        'height': 0,
+        'weight': 0,
+        'fitnessLevel': 'beginner',
+        'goals': [],
+        'medicalConditions': [],
+        'assignedWorkouts': [],
+        'completedWorkouts': 0,
+        'totalWorkoutTime': 0,
+        'currentStreak': 0,
+        'lastWorkout': null,
+        'workoutsCompleted': 0,
+        'totalWorkouts': 0,
+        'joinedAt': FieldValue.serverTimestamp(),
+      });
     } catch (e) {
-      print(
-        '❌ Error creating client data: $e',
-      );
+      // Handle error silently
     }
   }
 
   // Create default trainer data
-  static Future<void>
-  _createDefaultTrainerData(
-    String uid,
-  ) async {
+  static Future<void> _createDefaultTrainerData(String uid) async {
     try {
-      print('🏋️ Creating default trainer data for: $uid');
-      
       // Ensure shared workouts database exists
       await _initializeSharedWorkouts();
       
-      await _firestore
-          .collection('trainers')
-          .doc(uid)
-          .set({
-            'uid': uid,
-            'totalClients': 0,
-            'rating': 5.0,
-            'clientIds': [],
-            'specializations': ['כוח', 'קרדיו', 'יוגה'],
-            'experience': 3,
-            'joinedAt': FieldValue.serverTimestamp(),
-          });
-      print('✅ Default trainer data created successfully');
+      await _firestore.collection('trainers').doc(uid).set({
+        'uid': uid,
+        'totalClients': 0,
+        'rating': 5.0,
+        'clientIds': [],
+        'specializations': ['כוח', 'קרדיו', 'יוגה'],
+        'experience': 3,
+        'isApproved': false, // New trainers need approval
+        'approvedBy': '',
+        'requestedAt': FieldValue.serverTimestamp(),
+        'approvedAt': null,
+        'joinedAt': FieldValue.serverTimestamp(),
+      });
     } catch (e) {
-      print('❌ Error creating trainer data: $e');
+      // Handle error silently
     }
   }
 
@@ -766,10 +704,484 @@ class UserService {
           .doc(uid)
           .update(data);
     } catch (e) {
-      print(
-        'Error updating client data: $e',
-      );
       rethrow;
+    }
+  }
+
+  // Search for clients by email
+  static Future<List<Map<String, dynamic>>> searchClientsByEmail(String email) async {
+    try {
+      if (email.isEmpty) return [];
+      
+      print('🔍 DEBUG: Searching for clients with email: $email');
+      
+      QuerySnapshot querySnapshot = await _firestore
+          .collection('users')
+          .where('email', isGreaterThanOrEqualTo: email.toLowerCase())
+          .where('email', isLessThan: email.toLowerCase() + '\uf8ff')
+          .where('role', isEqualTo: 'client')
+          .limit(10)
+          .get();
+
+      print('🔍 DEBUG: Found ${querySnapshot.docs.length} users matching search');
+
+      List<Map<String, dynamic>> users = [];
+      for (var doc in querySnapshot.docs) {
+        Map<String, dynamic> userData = doc.data() as Map<String, dynamic>;
+        print('🔍 DEBUG: Processing user: ${userData['email']}');
+        
+        // Get client data as well
+        DocumentSnapshot clientDoc = await _firestore
+            .collection('clients')
+            .doc(doc.id)
+            .get();
+        
+        if (clientDoc.exists) {
+          Map<String, dynamic> clientData = clientDoc.data() as Map<String, dynamic>;
+          userData['clientData'] = clientData;
+          print('🔍 DEBUG: Added client data for: ${userData['email']}');
+        } else {
+          print('🔍 DEBUG: No client data found for: ${userData['email']}');
+          // Add empty client data if not found
+          userData['clientData'] = {
+            'trainerId': '',
+            'age': 0,
+            'height': 0,
+            'weight': 0,
+            'fitnessLevel': 'beginner',
+          };
+        }
+        
+        users.add(userData);
+      }
+      
+      print('🔍 DEBUG: Returning ${users.length} users');
+      return users;
+    } catch (e) {
+      print('🔍 DEBUG: Error searching clients: $e');
+      return [];
+    }
+  }
+
+  // Assign client to trainer
+  static Future<bool> assignClientToTrainer(String clientUid, String trainerUid) async {
+    try {
+      print('🔧 DEBUG UserService: Starting assignClientToTrainer - clientUid: $clientUid, trainerUid: $trainerUid');
+      
+      // Update client's trainer ID
+      print('🔧 DEBUG UserService: Updating client document...');
+      await _firestore
+          .collection('clients')
+          .doc(clientUid)
+          .update({'trainerId': trainerUid});
+      print('🔧 DEBUG UserService: Client document updated successfully');
+
+      // Add client to trainer's client list
+      print('🔧 DEBUG UserService: Updating trainer document...');
+      await _firestore
+          .collection('trainers')
+          .doc(trainerUid)
+          .update({
+            'clientIds': FieldValue.arrayUnion([clientUid]),
+            'totalClients': FieldValue.increment(1),
+          });
+      print('🔧 DEBUG UserService: Trainer document updated successfully');
+
+      print('🔧 DEBUG UserService: assignClientToTrainer completed successfully');
+      return true;
+    } catch (e) {
+      print('🔧 DEBUG UserService: assignClientToTrainer failed with error: $e');
+      return false;
+    }
+  }
+
+  // Remove client from trainer
+  static Future<bool> removeClientFromTrainer(String clientUid, String trainerUid) async {
+    try {
+      // Remove trainer ID from client
+      await _firestore
+          .collection('clients')
+          .doc(clientUid)
+          .update({'trainerId': ''});
+
+      // Remove client from trainer's client list
+      await _firestore
+          .collection('trainers')
+          .doc(trainerUid)
+          .update({
+            'clientIds': FieldValue.arrayRemove([clientUid]),
+            'totalClients': FieldValue.increment(-1),
+          });
+
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Get trainer's clients
+  static Future<List<Map<String, dynamic>>> getTrainerClients(String trainerUid) async {
+    try {
+      // Get trainer data to get client IDs
+      DocumentSnapshot trainerDoc = await _firestore
+          .collection('trainers')
+          .doc(trainerUid)
+          .get();
+
+      if (!trainerDoc.exists) return [];
+
+      Map<String, dynamic> trainerData = trainerDoc.data() as Map<String, dynamic>;
+      List<dynamic> clientIds = trainerData['clientIds'] ?? [];
+
+      if (clientIds.isEmpty) return [];
+
+      List<Map<String, dynamic>> clients = [];
+
+      for (String clientId in clientIds) {
+        // Get user data
+        DocumentSnapshot userDoc = await _firestore
+            .collection('users')
+            .doc(clientId)
+            .get();
+
+        if (userDoc.exists) {
+          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+
+          // Get client data
+          DocumentSnapshot clientDoc = await _firestore
+              .collection('clients')
+              .doc(clientId)
+              .get();
+
+          if (clientDoc.exists) {
+            Map<String, dynamic> clientData = clientDoc.data() as Map<String, dynamic>;
+            userData['clientData'] = clientData;
+            clients.add(userData);
+          }
+        }
+      }
+
+      return clients;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // Get all unassigned clients
+  static Future<List<Map<String, dynamic>>> getUnassignedClients() async {
+    try {
+      QuerySnapshot querySnapshot = await _firestore
+          .collection('clients')
+          .where('trainerId', isEqualTo: '')
+          .get();
+
+      List<Map<String, dynamic>> clients = [];
+
+      for (var doc in querySnapshot.docs) {
+        Map<String, dynamic> clientData = doc.data() as Map<String, dynamic>;
+        
+        // Get user data
+        DocumentSnapshot userDoc = await _firestore
+            .collection('users')
+            .doc(doc.id)
+            .get();
+
+        if (userDoc.exists) {
+          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+          userData['clientData'] = clientData;
+          clients.add(userData);
+        }
+      }
+
+      return clients;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // Create a new client and assign to trainer
+  static Future<Map<String, dynamic>> createNewClient({
+    required String email,
+    required String password,
+    required String firstName,
+    required String lastName,
+    required int age,
+    required int height,
+    required int weight,
+    required String fitnessLevel,
+    required String trainerUid,
+  }) async {
+    try {
+      print('🔧 DEBUG UserService: Creating new client account...');
+      
+      // Create Firebase Auth account
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      
+      final uid = userCredential.user!.uid;
+      print('🔧 DEBUG UserService: Firebase Auth account created with UID: $uid');
+      
+      // Create user document
+      Map<String, dynamic> userData = {
+        'uid': uid,
+        'email': email,
+        'firstName': firstName,
+        'lastName': lastName,
+        'role': 'client',
+        'createdAt': FieldValue.serverTimestamp(),
+        'lastLoginAt': FieldValue.serverTimestamp(),
+        'isActive': true,
+        'fcmToken': '',
+      };
+      
+      await _firestore.collection('users').doc(uid).set(userData);
+      print('🔧 DEBUG UserService: User document created');
+      
+      // Create client document with trainer assignment
+      Map<String, dynamic> clientData = {
+        'uid': uid,
+        'trainerId': trainerUid,
+        'age': age > 0 ? age : 25, // Default age if not provided
+        'height': height > 0 ? height : 170, // Default height if not provided
+        'weight': weight > 0 ? weight : 70, // Default weight if not provided
+        'fitnessLevel': fitnessLevel,
+        'goals': [],
+        'medicalConditions': [],
+        'assignedWorkouts': [],
+        'completedWorkouts': 0,
+        'totalWorkoutTime': 0,
+        'currentStreak': 0,
+        'lastWorkout': null,
+        'workoutsCompleted': 0,
+        'totalWorkouts': 0,
+        'joinedAt': FieldValue.serverTimestamp(),
+      };
+      
+      await _firestore.collection('clients').doc(uid).set(clientData);
+      print('🔧 DEBUG UserService: Client document created');
+      
+      // Add client to trainer's client list
+      await _firestore
+          .collection('trainers')
+          .doc(trainerUid)
+          .update({
+            'clientIds': FieldValue.arrayUnion([uid]),
+            'totalClients': FieldValue.increment(1),
+          });
+      print('🔧 DEBUG UserService: Client added to trainer\'s list');
+      
+      // Return the created client data
+      Map<String, dynamic> result = {
+        ...userData,
+        'clientData': clientData,
+      };
+      
+      print('🔧 DEBUG UserService: Client creation completed successfully');
+      return result;
+      
+    } catch (e) {
+      print('🔧 DEBUG UserService: Error creating client: $e');
+      rethrow;
+    }
+  }
+
+  // Get pending trainer requests (only works for approved trainers)
+  static Future<List<Map<String, dynamic>>> getPendingTrainerRequests() async {
+    try {
+      // First check if current user is an approved trainer
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        print('❌ No authenticated user found');
+        return [];
+      }
+
+      bool isApproved = await isApprovedTrainer(currentUser.uid);
+      if (!isApproved) {
+        print('❌ Current user is not an approved trainer, cannot view pending requests');
+        return [];
+      }
+
+      print('✅ User is approved trainer, fetching pending requests...');
+      
+      QuerySnapshot querySnapshot = await _firestore
+          .collection('trainers')
+          .where('isApproved', isEqualTo: false)
+          .orderBy('requestedAt', descending: true)
+          .get();
+
+      print('📋 Found ${querySnapshot.docs.length} pending trainer requests');
+      List<Map<String, dynamic>> pendingTrainers = [];
+
+      for (var doc in querySnapshot.docs) {
+        Map<String, dynamic> trainerData = doc.data() as Map<String, dynamic>;
+        
+        // Get user data
+        DocumentSnapshot userDoc = await _firestore
+            .collection('users')
+            .doc(doc.id)
+            .get();
+
+        if (userDoc.exists) {
+          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+          userData['trainerData'] = trainerData;
+          userData['uid'] = doc.id;
+          
+          // Add formatted request date
+          if (trainerData['requestedAt'] != null) {
+            try {
+              Timestamp timestamp = trainerData['requestedAt'] as Timestamp;
+              userData['requestedAtFormatted'] = _formatDate(timestamp.toDate());
+            } catch (e) {
+              userData['requestedAtFormatted'] = 'לא ידוע';
+            }
+          } else {
+            userData['requestedAtFormatted'] = 'לא ידוע';
+          }
+          
+          pendingTrainers.add(userData);
+          print('📝 Added pending trainer: ${userData['firstName']} ${userData['lastName']}');
+        }
+      }
+
+      return pendingTrainers;
+    } catch (e) {
+      print('❌ Error getting pending trainer requests: $e');
+      // Return empty list instead of throwing error to prevent UI crashes
+      return [];
+    }
+  }
+
+  // Helper method to format dates
+  static String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+    
+    if (difference.inDays == 0) {
+      return 'היום';
+    } else if (difference.inDays == 1) {
+      return 'אתמול';
+    } else if (difference.inDays < 7) {
+      return 'לפני ${difference.inDays} ימים';
+    } else {
+      return '${date.day}/${date.month}/${date.year}';
+    }
+  }
+
+  // Approve trainer request
+  static Future<bool> approveTrainer(String trainerUid, String approverUid) async {
+    try {
+      // Verify approver is an approved trainer
+      bool canApprove = await isApprovedTrainer(approverUid);
+      if (!canApprove) {
+        print('❌ Approver $approverUid is not an approved trainer');
+        return false;
+      }
+
+      await _firestore
+          .collection('trainers')
+          .doc(trainerUid)
+          .update({
+            'isApproved': true,
+            'approvedBy': approverUid,
+            'approvedAt': FieldValue.serverTimestamp(),
+          });
+
+      // Also update the user role to trainer
+      await _firestore
+          .collection('users')
+          .doc(trainerUid)
+          .update({
+            'role': 'trainer',
+            'lastUpdatedAt': FieldValue.serverTimestamp(),
+          });
+
+      print('✅ Trainer $trainerUid approved by $approverUid');
+      return true;
+    } catch (e) {
+      print('❌ Error approving trainer: $e');
+      return false;
+    }
+  }
+
+  // Reject trainer request
+  static Future<bool> rejectTrainer(String trainerUid, String rejecterUid, String reason) async {
+    try {
+      // Verify rejecter is an approved trainer
+      bool canReject = await isApprovedTrainer(rejecterUid);
+      if (!canReject) {
+        print('❌ Rejecter $rejecterUid is not an approved trainer');
+        return false;
+      }
+
+      await _firestore
+          .collection('trainers')
+          .doc(trainerUid)
+          .update({
+            'isApproved': false,
+            'isRejected': true,
+            'rejectedBy': rejecterUid,
+            'rejectedAt': FieldValue.serverTimestamp(),
+            'rejectionReason': reason,
+          });
+
+      print('✅ Trainer $trainerUid rejected by $rejecterUid');
+      return true;
+    } catch (e) {
+      print('❌ Error rejecting trainer: $e');
+      return false;
+    }
+  }
+
+  // Check if user is approved trainer
+  static Future<bool> isApprovedTrainer(String uid) async {
+    try {
+      DocumentSnapshot doc = await _firestore
+          .collection('trainers')
+          .doc(uid)
+          .get();
+
+      if (doc.exists) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        return data['isApproved'] == true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Get all approved trainers
+  static Future<List<Map<String, dynamic>>> getApprovedTrainers() async {
+    try {
+      QuerySnapshot querySnapshot = await _firestore
+          .collection('trainers')
+          .where('isApproved', isEqualTo: true)
+          .get();
+
+      List<Map<String, dynamic>> trainers = [];
+
+      for (var doc in querySnapshot.docs) {
+        Map<String, dynamic> trainerData = doc.data() as Map<String, dynamic>;
+        
+        // Get user data
+        DocumentSnapshot userDoc = await _firestore
+            .collection('users')
+            .doc(doc.id)
+            .get();
+
+        if (userDoc.exists) {
+          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+          userData['trainerData'] = trainerData;
+          trainers.add(userData);
+        }
+      }
+
+      return trainers;
+    } catch (e) {
+      print('Error getting approved trainers: $e');
+      return [];
     }
   }
 }
